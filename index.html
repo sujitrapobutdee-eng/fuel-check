@@ -3,60 +3,161 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ระบบบันทึกยอดน้ำมัน</title>
+<title>ระบบตรวจสอบยอดน้ำมัน</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f6f8;color:#17202a}
-.wrap{max-width:1050px;margin:auto;padding:16px}.head{background:linear-gradient(135deg,#111827,#2563eb);color:#fff;border-radius:18px;padding:22px;margin-bottom:16px}
-h1{margin:0 0 5px;font-size:26px}h2{margin:0 0 16px;font-size:20px}.muted{opacity:.8}
-.card{background:#fff;border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 3px 14px #0000000d}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}label{font-weight:700;display:block;margin-bottom:6px}
-input,select{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:10px;font-size:16px;background:#fff}
-.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}.box{background:#f3f4f6;border-radius:12px;padding:14px}.box small{color:#6b7280}.box b{display:block;font-size:20px;margin-top:5px}
-.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}button{border:0;border-radius:10px;padding:11px 16px;font-size:15px;font-weight:700;cursor:pointer}.primary{background:#2563eb;color:#fff}.green{background:#16a34a;color:#fff}.red{background:#dc2626;color:#fff}.gray{background:#6b7280;color:#fff}
-.status{display:none;padding:11px;border-radius:10px;margin-bottom:16px}.status.ok{display:block;background:#dcfce7;color:#166534}.status.err{display:block;background:#fee2e2;color:#991b1b}
-.table{overflow:auto}table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:center}th{background:#f9fafb}
-@media(max-width:700px){.wrap{padding:10px}.grid{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,1fr)}button{flex:1}.box b{font-size:17px}}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f6f8;color:#17202a}
+.wrap{max-width:1100px;margin:auto;padding:12px}
+.head{background:linear-gradient(135deg,#111827,#2563eb);color:#fff;border-radius:18px;padding:20px;margin-bottom:14px}
+h1{margin:0 0 6px;font-size:25px}h2{margin:0 0 15px;font-size:19px}
+.muted{opacity:.85}.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 3px 14px #0000000d}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+label{font-weight:700;display:block;margin-bottom:6px}
+input,select{width:100%;padding:11px;border:1px solid #d1d5db;border-radius:10px;font-size:16px;background:#fff}
+.section-title{font-weight:800;margin:17px 0 10px;padding-bottom:7px;border-bottom:2px solid #e5e7eb}
+.reading-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.reading{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+.reading h3{margin:0 0 10px;font-size:16px}
+.result{background:#eff6ff;border-radius:12px;padding:12px;margin-top:10px}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.box{background:#f3f4f6;border-radius:12px;padding:13px}.box small{color:#6b7280}.box b{display:block;font-size:19px;margin-top:5px}
+.diff{background:#fff7ed}.good{background:#ecfdf5}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}
+button{border:0;border-radius:10px;padding:11px 15px;font-size:15px;font-weight:700;cursor:pointer}
+.primary{background:#2563eb;color:#fff}.green{background:#16a34a;color:#fff}.red{background:#dc2626;color:#fff}.gray{background:#6b7280;color:#fff}
+.status{display:none;padding:11px;border-radius:10px;margin-bottom:14px}.status.ok{display:block;background:#dcfce7;color:#166534}.status.err{display:block;background:#fee2e2;color:#991b1b}
+.table{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1050px}
+th,td{padding:9px;border-bottom:1px solid #e5e7eb;text-align:center;font-size:14px}th{background:#f9fafb}
+.note{font-size:13px;color:#64748b;margin-top:8px;line-height:1.5}
+@media(max-width:700px){
+ .wrap{padding:9px}.grid,.reading-grid{grid-template-columns:1fr}
+ .summary{grid-template-columns:repeat(2,1fr)}button{flex:1}.box b{font-size:16px}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
-<header class="head"><h1>⛽ ระบบบันทึกยอดน้ำมัน</h1><div class="muted">ยอดขาย • ต้นทุน • กำไร • ประวัติออนไลน์</div></header>
+<header class="head">
+  <h1>⛽ ระบบตรวจสอบยอดน้ำมัน</h1>
+  <div class="muted">มิเตอร์ตู้ 2 ช่อง • น้ำมันในถัง • ส่วนต่าง • ยอดเงิน • กำไร</div>
+</header>
+
 <div id="status" class="status"></div>
 
 <section class="card">
-<h2>⛽ เพิ่มรายการ</h2>
+<h2>📝 บันทึกรอบตรวจ</h2>
+
 <div class="grid">
-<div><label>วันที่</label><input id="date" type="date"></div>
-<div><label>ชนิดน้ำมัน</label><select id="fuelType"><option>เบนซิน</option><option>แก๊สโซฮอล์ 91</option><option>แก๊สโซฮอล์ 95</option><option>E20</option><option>E85</option><option>ดีเซล</option><option>อื่นๆ</option></select></div>
-<div><label>จำนวนลิตร</label><input id="liters" type="number" min="0" step="0.01" placeholder="เช่น 100"></div>
-<div><label>ราคาขาย / ลิตร</label><input id="sellPrice" type="number" min="0" step="0.01" placeholder="เช่น 35.50"></div>
-<div><label>ต้นทุน / ลิตร</label><input id="costPrice" type="number" min="0" step="0.01" placeholder="เช่น 32.00"></div>
-<div><label>หมายเหตุ</label><input id="note" type="text" placeholder="ถ้ามี"></div>
+  <div><label>วันที่</label><input id="date" type="date"></div>
+  <div>
+    <label>ชนิดน้ำมัน</label>
+    <select id="fuelType">
+      <option>เบนซิน</option>
+      <option>แก๊สโซฮอล์ 91</option>
+      <option>แก๊สโซฮอล์ 95</option>
+      <option>E20</option>
+      <option>E85</option>
+      <option>ดีเซล</option>
+      <option>อื่นๆ</option>
+    </select>
+  </div>
 </div>
+
+<div class="section-title">🔢 เลขมิเตอร์ตู้ขาย — ช่อง 1 และช่อง 2</div>
+<div class="reading-grid">
+  <div class="reading">
+    <h3>ตู้ช่อง 1</h3>
+    <label>รอบแรก</label>
+    <input id="p1start" type="number" min="0" step="0.001" placeholder="เช่น 162334.988">
+    <br><br>
+    <label>รอบสอง</label>
+    <input id="p1end" type="number" min="0" step="0.001" placeholder="เช่น 162566.089">
+    <div class="result">ขายได้ช่อง 1: <b id="p1liters">0.000</b> ลิตร</div>
+  </div>
+
+  <div class="reading">
+    <h3>ตู้ช่อง 2</h3>
+    <label>รอบแรก</label>
+    <input id="p2start" type="number" min="0" step="0.001" placeholder="เลขมิเตอร์รอบแรก">
+    <br><br>
+    <label>รอบสอง</label>
+    <input id="p2end" type="number" min="0" step="0.001" placeholder="เลขมิเตอร์รอบสอง">
+    <div class="result">ขายได้ช่อง 2: <b id="p2liters">0.000</b> ลิตร</div>
+  </div>
+</div>
+
+<div class="section-title">🛢️ น้ำมันในถัง</div>
+<div class="grid">
+  <div>
+    <label>น้ำมันในถังตอนเริ่มรอบ (ลิตร)</label>
+    <input id="tankStart" type="number" min="0" step="0.001" placeholder="เช่น 5000">
+  </div>
+  <div>
+    <label>น้ำมันที่เหลือในถังตอนจบรอบ (ลิตร)</label>
+    <input id="tankEnd" type="number" min="0" step="0.001" placeholder="เช่น 4760">
+  </div>
+</div>
+
+<div class="section-title">💰 ราคา</div>
+<div class="grid">
+  <div><label>ราคาขาย / ลิตร</label><input id="sellPrice" type="number" min="0" step="0.01" placeholder="เช่น 35.50"></div>
+  <div><label>ต้นทุน / ลิตร</label><input id="costPrice" type="number" min="0" step="0.01" placeholder="เช่น 32.00"></div>
+</div>
+
 <div class="summary">
-<div class="box"><small>💵 ยอดขาย</small><b id="saleTotal">0.00 บาท</b></div>
-<div class="box"><small>📦 ต้นทุน</small><b id="costTotal">0.00 บาท</b></div>
-<div class="box"><small>📈 กำไร</small><b id="profitTotal">0.00 บาท</b></div>
-<div class="box"><small>⛽ ลิตร</small><b id="literTotal">0.00</b></div>
+  <div class="box"><small>⛽ ตู้ช่อง 1 ขาย</small><b id="s1">0.000 ลิตร</b></div>
+  <div class="box"><small>⛽ ตู้ช่อง 2 ขาย</small><b id="s2">0.000 ลิตร</b></div>
+  <div class="box"><small>⛽ ตู้ขายรวม</small><b id="pumpTotal">0.000 ลิตร</b></div>
+  <div class="box"><small>🛢️ ถังใช้ไป</small><b id="tankUsed">0.000 ลิตร</b></div>
 </div>
-<div class="actions"><button class="primary" id="calc">🧮 คำนวณ</button><button class="green" id="save">💾 บันทึก</button><button class="gray" id="clear">🔄 ล้าง</button></div>
+
+<div class="summary">
+  <div class="box diff"><small>⚖️ ส่วนต่าง ตู้กับถัง</small><b id="difference">0.000 ลิตร</b></div>
+  <div class="box"><small>💵 ยอดขาย</small><b id="saleTotal">0.00 บาท</b></div>
+  <div class="box"><small>📦 ต้นทุน</small><b id="costTotal">0.00 บาท</b></div>
+  <div class="box good"><small>📈 กำไร</small><b id="profitTotal">0.00 บาท</b></div>
+</div>
+
+<div class="note">
+  วิธีคิด: <b>เลขมิเตอร์รอบสอง − รอบแรก = ลิตรที่ตู้ขาย</b><br>
+  ช่อง 1 + ช่อง 2 = น้ำมันที่ตู้ขายทั้งหมด<br>
+  น้ำมันในถังที่ใช้ไป = น้ำมันเริ่มต้น − น้ำมันที่เหลือ<br>
+  ส่วนต่าง = น้ำมันในถังที่ใช้ไป − น้ำมันที่ตู้ขาย
+</div>
+
+<div class="actions">
+  <button class="primary" id="calc">🧮 คำนวณ</button>
+  <button class="green" id="save">💾 บันทึก</button>
+  <button class="gray" id="clear">🔄 ล้าง</button>
+</div>
 </section>
 
 <section class="card">
-<h2>📊 สรุปรวม</h2>
+<h2>📊 สรุปรวมประวัติ</h2>
 <div class="summary">
-<div class="box"><small>💵 ยอดขายรวม</small><b id="allSales">0.00 บาท</b></div>
-<div class="box"><small>📦 ต้นทุนรวม</small><b id="allCosts">0.00 บาท</b></div>
-<div class="box"><small>📈 กำไรรวม</small><b id="allProfit">0.00 บาท</b></div>
-<div class="box"><small>⛽ น้ำมันรวม</small><b id="allLiters">0.00 ลิตร</b></div>
+  <div class="box"><small>💵 ยอดขายรวม</small><b id="allSales">0.00 บาท</b></div>
+  <div class="box"><small>📦 ต้นทุนรวม</small><b id="allCosts">0.00 บาท</b></div>
+  <div class="box"><small>📈 กำไรรวม</small><b id="allProfit">0.00 บาท</b></div>
+  <div class="box"><small>⛽ ตู้ขายรวม</small><b id="allLiters">0.000 ลิตร</b></div>
 </div>
 </section>
 
 <section class="card">
-<h2>🕘 ประวัติรายการ</h2>
-<div class="actions"><button class="primary" id="refresh">🔄 รีเฟรช</button><button class="green" id="csv">📥 ดาวน์โหลด CSV</button></div>
+<h2>🕘 ประวัติการตรวจ</h2>
+<div class="actions">
+  <button class="primary" id="refresh">🔄 รีเฟรช</button>
+  <button class="green" id="csv">📥 ดาวน์โหลด CSV</button>
+</div>
 <br>
-<div class="table"><table><thead><tr><th>วันที่</th><th>น้ำมัน</th><th>ลิตร</th><th>ราคาขาย</th><th>ยอดขาย</th><th>ต้นทุน</th><th>กำไร</th><th>ลบ</th></tr></thead><tbody id="history"><tr><td colspan="8">กำลังโหลด...</td></tr></tbody></table></div>
+<div class="table">
+<table>
+<thead><tr>
+<th>วันที่</th><th>น้ำมัน</th><th>ช่อง 1</th><th>ช่อง 2</th><th>ตู้รวม</th>
+<th>ถังใช้ไป</th><th>ส่วนต่าง</th><th>ยอดขาย</th><th>กำไร</th><th>ลบ</th>
+</tr></thead>
+<tbody id="history"><tr><td colspan="10">กำลังโหลด...</td></tr></tbody>
+</table>
+</div>
 </section>
 </div>
 
@@ -66,72 +167,156 @@ import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2
 const SUPABASE_URL="https://zxotbgxaqqzyggnlddok.supabase.co";
 const SUPABASE_KEY="sb_publishable_lITFb77PJzK71n2-UYHfTA_KiNrtADu";
 const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
-
 const $=id=>document.getElementById(id);
 let records=[];
 
 $("date").value=new Date().toLocaleDateString("en-CA");
 
+function num(id){return Number($(id).value)||0}
+function fmt(n){return Number(n||0).toFixed(3)}
 function money(n){return Number(n||0).toFixed(2)}
-function msg(t,err=false){$("status").textContent=t;$("status").className="status "+(err?"err":"ok");setTimeout(()=>$("status").className="status",3000)}
+function msg(t,err=false){$("status").textContent=t;$("status").className="status "+(err?"err":"ok");setTimeout(()=>$("status").className="status",3500)}
 
 function calculate(){
- const l=Number($("liters").value)||0,s=Number($("sellPrice").value)||0,c=Number($("costPrice").value)||0;
- $("saleTotal").textContent=money(l*s)+" บาท";
- $("costTotal").textContent=money(l*c)+" บาท";
- $("profitTotal").textContent=money(l*(s-c))+" บาท";
- $("literTotal").textContent=money(l);
+  const p1=num("p1end")-num("p1start");
+  const p2=num("p2end")-num("p2start");
+  const pump=p1+p2;
+  const tank=num("tankStart")-num("tankEnd");
+  const diff=tank-pump;
+  const sell=num("sellPrice"), cost=num("costPrice");
+  $("p1liters").textContent=fmt(p1);
+  $("p2liters").textContent=fmt(p2);
+  $("s1").textContent=fmt(p1)+" ลิตร";
+  $("s2").textContent=fmt(p2)+" ลิตร";
+  $("pumpTotal").textContent=fmt(pump)+" ลิตร";
+  $("tankUsed").textContent=fmt(tank)+" ลิตร";
+  $("difference").textContent=fmt(diff)+" ลิตร";
+  $("saleTotal").textContent=money(pump*sell)+" บาท";
+  $("costTotal").textContent=money(pump*cost)+" บาท";
+  $("profitTotal").textContent=money(pump*(sell-cost))+" บาท";
+  return {p1,p2,pump,tank,diff,sell,cost,sales:pump*sell,costTotal:pump*cost,profit:pump*(sell-cost)};
 }
-["liters","sellPrice","costPrice"].forEach(x=>$(x).addEventListener("input",calculate));
+
+["p1start","p1end","p2start","p2end","tankStart","tankEnd","sellPrice","costPrice"].forEach(id=>$(id).addEventListener("input",calculate));
 $("calc").onclick=calculate;
 
 $("clear").onclick=()=>{
- ["liters","sellPrice","costPrice","note"].forEach(x=>$(x).value="");
+ ["p1start","p1end","p2start","p2end","tankStart","tankEnd","sellPrice","costPrice"].forEach(id=>$(id).value="");
  calculate();
 };
 
 $("save").onclick=async()=>{
- const l=Number($("liters").value)||0,s=Number($("sellPrice").value)||0,c=Number($("costPrice").value)||0;
- if(l<=0)return msg("กรุณากรอกจำนวนลิตร",true);
- if(s<=0)return msg("กรุณากรอกราคาขาย",true);
- const sales=l*s,cost=l*c;
- const {error}=await supabase.from("fuel_records").insert({
-  date:$("date").value,fuel_type:$("fuelType").value,liters:l,sell_price:s,cost_price:c,
-  sales_total:sales,cost_total:cost,profit:sales-cost,note:$("note").value||null
- });
- if(error)return msg("บันทึกไม่สำเร็จ: "+error.message,true);
- msg("บันทึกเรียบร้อยแล้ว"); $("clear").click(); load();
+  const r=calculate();
+  if(num("p1end")<num("p1start") || num("p2end")<num("p2start")) return msg("เลขมิเตอร์รอบสองต้องมากกว่าหรือเท่ารอบแรก",true);
+  if(num("tankEnd")>num("tankStart")) return msg("น้ำมันที่เหลือในถังต้องไม่มากกว่าน้ำมันตอนเริ่มรอบ",true);
+  if(r.pump<=0)return msg("กรุณากรอกเลขมิเตอร์ตู้ให้ครบ",true);
+  if(r.sell<=0)return msg("กรุณากรอกราคาขาย",true);
+
+  const detail={
+    ช่อง1:{รอบแรก:num("p1start"),รอบสอง:num("p1end"),ขายได้:r.p1},
+    ช่อง2:{รอบแรก:num("p2start"),รอบสอง:num("p2end"),ขายได้:r.p2},
+    ถัง:{เริ่มต้น:num("tankStart"),เหลือ:num("tankEnd"),ใช้ไป:r.tank},
+    ส่วนต่าง:r.diff
+  };
+  const note="รายละเอียดตรวจ: "+JSON.stringify(detail);
+
+  const {error}=await supabase.from("fuel_records").insert({
+    date:$("date").value,
+    fuel_type:$("fuelType").value,
+    liters:r.pump,
+    sell_price:r.sell,
+    cost_price:r.cost,
+    sales_total:r.sales,
+    cost_total:r.costTotal,
+    profit:r.profit,
+    note
+  });
+  if(error)return msg("บันทึกไม่สำเร็จ: "+error.message,true);
+  msg("บันทึกผลตรวจเรียบร้อยแล้ว");
+  $("clear").click();
+  load();
 };
 
 async function load(){
- $("history").innerHTML='<tr><td colspan="8">กำลังโหลด...</td></tr>';
- const {data,error}=await supabase.from("fuel_records").select("*").order("date",{ascending:false}).order("created_at",{ascending:false});
- if(error){$("history").innerHTML='<tr><td colspan="8">โหลดข้อมูลไม่สำเร็จ</td></tr>';return msg("เชื่อมต่อ Supabase ไม่สำเร็จ: "+error.message,true)}
- records=data||[]; render();
+  $("history").innerHTML='<tr><td colspan="10">กำลังโหลด...</td></tr>';
+  const {data,error}=await supabase.from("fuel_records").select("*").order("date",{ascending:false}).order("created_at",{ascending:false});
+  if(error){$("history").innerHTML='<tr><td colspan="10">โหลดข้อมูลไม่สำเร็จ</td></tr>';return msg("เชื่อมต่อ Supabase ไม่สำเร็จ: "+error.message,true)}
+  records=data||[]; render();
 }
+
+function parseDetail(note){
+  try{
+    const s=String(note||"");
+    if(!s.startsWith("รายละเอียดตรวจ: ")) return null;
+    return JSON.parse(s.replace("รายละเอียดตรวจ: ",""));
+  }catch(e){return null}
+}
+
 function render(){
- if(!records.length){$("history").innerHTML='<tr><td colspan="8">ยังไม่มีรายการ</td></tr>'}
- else $("history").innerHTML=records.map(r=>`<tr><td>${r.date||""}</td><td>${esc(r.fuel_type)}</td><td>${money(r.liters)}</td><td>${money(r.sell_price)}</td><td>${money(r.sales_total)}</td><td>${money(r.cost_total)}</td><td>${money(r.profit)}</td><td><button class="red" data-id="${r.id}">🗑️</button></td></tr>`).join("");
- document.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>del(b.dataset.id));
- let s=0,c=0,p=0,l=0;records.forEach(r=>{s+=+r.sales_total||0;c+=+r.cost_total||0;p+=+r.profit||0;l+=+r.liters||0});
- $("allSales").textContent=money(s)+" บาท";$("allCosts").textContent=money(c)+" บาท";$("allProfit").textContent=money(p)+" บาท";$("allLiters").textContent=money(l)+" ลิตร";
+  if(!records.length){
+    $("history").innerHTML='<tr><td colspan="10">ยังไม่มีรายการ</td></tr>';
+  }else{
+    $("history").innerHTML=records.map(r=>{
+      const d=parseDetail(r.note);
+      const p1=d?.ช่อง1?.ขายได้ ?? r.liters ?? 0;
+      const p2=d?.ช่อง2?.ขายได้ ?? 0;
+      const tank=d?.ถัง?.ใช้ไป ?? 0;
+      const diff=d?.ส่วนต่าง ?? 0;
+      return `<tr>
+        <td>${r.date||""}</td>
+        <td>${esc(r.fuel_type)}</td>
+        <td>${fmt(p1)}</td>
+        <td>${fmt(p2)}</td>
+        <td>${fmt(r.liters)}</td>
+        <td>${fmt(tank)}</td>
+        <td>${fmt(diff)}</td>
+        <td>${money(r.sales_total)}</td>
+        <td>${money(r.profit)}</td>
+        <td><button class="red" data-id="${r.id}">🗑️</button></td>
+      </tr>`;
+    }).join("");
+  }
+
+  document.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>del(b.dataset.id));
+  let s=0,c=0,p=0,l=0;
+  records.forEach(r=>{s+=+r.sales_total||0;c+=+r.cost_total||0;p+=+r.profit||0;l+=+r.liters||0});
+  $("allSales").textContent=money(s)+" บาท";
+  $("allCosts").textContent=money(c)+" บาท";
+  $("allProfit").textContent=money(p)+" บาท";
+  $("allLiters").textContent=fmt(l)+" ลิตร";
 }
+
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+
 async function del(id){
- if(!confirm("ต้องการลบรายการนี้หรือไม่?"))return;
- const {error}=await supabase.from("fuel_records").delete().eq("id",id);
- if(error)return msg("ลบไม่สำเร็จ: "+error.message,true);
- msg("ลบรายการแล้ว");load();
+  if(!confirm("ต้องการลบรายการนี้หรือไม่?"))return;
+  const {error}=await supabase.from("fuel_records").delete().eq("id",id);
+  if(error)return msg("ลบไม่สำเร็จ: "+error.message,true);
+  msg("ลบรายการแล้ว");load();
 }
+
 $("refresh").onclick=load;
 
 $("csv").onclick=()=>{
- if(!records.length)return msg("ยังไม่มีข้อมูลสำหรับดาวน์โหลด",true);
- const head=["วันที่","ชนิดน้ำมัน","ลิตร","ราคาขาย/ลิตร","ต้นทุน/ลิตร","ยอดขาย","ต้นทุน","กำไร","หมายเหตุ"];
- const rows=records.map(r=>[r.date,r.fuel_type,r.liters,r.sell_price,r.cost_price,r.sales_total,r.cost_total,r.profit,r.note||""]);
- const csv=[head,...rows].map(row=>row.map(v=>`"${String(v??"").replaceAll('"','""')}"`).join(",")).join("\n");
- const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"}));a.download="fuel-records-"+new Date().toISOString().slice(0,10)+".csv";a.click();
+  if(!records.length)return msg("ยังไม่มีข้อมูลสำหรับดาวน์โหลด",true);
+  const head=["วันที่","ชนิดน้ำมัน","ช่อง1ขายได้","ช่อง2ขายได้","ตู้ขายรวม","ถังใช้ไป","ส่วนต่างตู้กับถัง","ราคาขาย/ลิตร","ต้นทุน/ลิตร","ยอดขาย","ต้นทุน","กำไร","รายละเอียด"];
+  const rows=records.map(r=>{
+    const d=parseDetail(r.note);
+    return [
+      r.date,r.fuel_type,
+      d?.ช่อง1?.ขายได้ ?? "",d?.ช่อง2?.ขายได้ ?? "",r.liters,
+      d?.ถัง?.ใช้ไป ?? "",d?.ส่วนต่าง ?? "",
+      r.sell_price,r.cost_price,r.sales_total,r.cost_total,r.profit,r.note||""
+    ];
+  });
+  const csv=[head,...rows].map(row=>row.map(v=>`"${String(v??"").replaceAll('"','""')}"`).join(",")).join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"}));
+  a.download="fuel-check-"+new Date().toISOString().slice(0,10)+".csv";
+  a.click();
 };
+
+calculate();
 load();
 </script>
 </body>
