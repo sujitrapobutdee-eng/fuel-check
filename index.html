@@ -4,7 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ระบบตรวจสอบยอดน้ำมัน</title>
-<style>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#2563eb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default"><style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f6f8;color:#17202a}
 .wrap{max-width:1100px;margin:auto;padding:12px}
@@ -324,6 +328,13 @@ $("csv").onclick=()=>{
 
 calculate();
 load();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(console.error);
+  });
+}
 </script>
 </body>
 </html>
