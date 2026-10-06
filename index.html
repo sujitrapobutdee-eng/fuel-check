@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ระบบบันทึกยอดน้ำมัน</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f6f8;color:#17202a}
+.wrap{max-width:1050px;margin:auto;padding:16px}.head{background:linear-gradient(135deg,#111827,#2563eb);color:#fff;border-radius:18px;padding:22px;margin-bottom:16px}
+h1{margin:0 0 5px;font-size:26px}h2{margin:0 0 16px;font-size:20px}.muted{opacity:.8}
+.card{background:#fff;border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 3px 14px #0000000d}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}label{font-weight:700;display:block;margin-bottom:6px}
+input,select{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:10px;font-size:16px;background:#fff}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}.box{background:#f3f4f6;border-radius:12px;padding:14px}.box small{color:#6b7280}.box b{display:block;font-size:20px;margin-top:5px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}button{border:0;border-radius:10px;padding:11px 16px;font-size:15px;font-weight:700;cursor:pointer}.primary{background:#2563eb;color:#fff}.green{background:#16a34a;color:#fff}.red{background:#dc2626;color:#fff}.gray{background:#6b7280;color:#fff}
+.status{display:none;padding:11px;border-radius:10px;margin-bottom:16px}.status.ok{display:block;background:#dcfce7;color:#166534}.status.err{display:block;background:#fee2e2;color:#991b1b}
+.table{overflow:auto}table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:center}th{background:#f9fafb}
+@media(max-width:700px){.wrap{padding:10px}.grid{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,1fr)}button{flex:1}.box b{font-size:17px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="head"><h1>⛽ ระบบบันทึกยอดน้ำมัน</h1><div class="muted">ยอดขาย • ต้นทุน • กำไร • ประวัติออนไลน์</div></header>
+<div id="status" class="status"></div>
+
+<section class="card">
+<h2>⛽ เพิ่มรายการ</h2>
+<div class="grid">
+<div><label>วันที่</label><input id="date" type="date"></div>
+<div><label>ชนิดน้ำมัน</label><select id="fuelType"><option>เบนซิน</option><option>แก๊สโซฮอล์ 91</option><option>แก๊สโซฮอล์ 95</option><option>E20</option><option>E85</option><option>ดีเซล</option><option>อื่นๆ</option></select></div>
+<div><label>จำนวนลิตร</label><input id="liters" type="number" min="0" step="0.01" placeholder="เช่น 100"></div>
+<div><label>ราคาขาย / ลิตร</label><input id="sellPrice" type="number" min="0" step="0.01" placeholder="เช่น 35.50"></div>
+<div><label>ต้นทุน / ลิตร</label><input id="costPrice" type="number" min="0" step="0.01" placeholder="เช่น 32.00"></div>
+<div><label>หมายเหตุ</label><input id="note" type="text" placeholder="ถ้ามี"></div>
+</div>
+<div class="summary">
+<div class="box"><small>💵 ยอดขาย</small><b id="saleTotal">0.00 บาท</b></div>
+<div class="box"><small>📦 ต้นทุน</small><b id="costTotal">0.00 บาท</b></div>
+<div class="box"><small>📈 กำไร</small><b id="profitTotal">0.00 บาท</b></div>
+<div class="box"><small>⛽ ลิตร</small><b id="literTotal">0.00</b></div>
+</div>
+<div class="actions"><button class="primary" id="calc">🧮 คำนวณ</button><button class="green" id="save">💾 บันทึก</button><button class="gray" id="clear">🔄 ล้าง</button></div>
+</section>
+
+<section class="card">
+<h2>📊 สรุปรวม</h2>
+<div class="summary">
+<div class="box"><small>💵 ยอดขายรวม</small><b id="allSales">0.00 บาท</b></div>
+<div class="box"><small>📦 ต้นทุนรวม</small><b id="allCosts">0.00 บาท</b></div>
+<div class="box"><small>📈 กำไรรวม</small><b id="allProfit">0.00 บาท</b></div>
+<div class="box"><small>⛽ น้ำมันรวม</small><b id="allLiters">0.00 ลิตร</b></div>
+</div>
+</section>
+
+<section class="card">
+<h2>🕘 ประวัติรายการ</h2>
+<div class="actions"><button class="primary" id="refresh">🔄 รีเฟรช</button><button class="green" id="csv">📥 ดาวน์โหลด CSV</button></div>
+<br>
+<div class="table"><table><thead><tr><th>วันที่</th><th>น้ำมัน</th><th>ลิตร</th><th>ราคาขาย</th><th>ยอดขาย</th><th>ต้นทุน</th><th>กำไร</th><th>ลบ</th></tr></thead><tbody id="history"><tr><td colspan="8">กำลังโหลด...</td></tr></tbody></table></div>
+</section>
+</div>
+
+<script type="module">
+import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+const SUPABASE_URL="https://zxotbgxaqqzyggnlddok.supabase.co";
+const SUPABASE_KEY="sb_publishable_lITFb77PJzK71n2-UYHfTA_KiNrtADu";
+const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const $=id=>document.getElementById(id);
+let records=[];
+
+$("date").value=new Date().toLocaleDateString("en-CA");
+
+function money(n){return Number(n||0).toFixed(2)}
+function msg(t,err=false){$("status").textContent=t;$("status").className="status "+(err?"err":"ok");setTimeout(()=>$("status").className="status",3000)}
+
+function calculate(){
+ const l=Number($("liters").value)||0,s=Number($("sellPrice").value)||0,c=Number($("costPrice").value)||0;
+ $("saleTotal").textContent=money(l*s)+" บาท";
+ $("costTotal").textContent=money(l*c)+" บาท";
+ $("profitTotal").textContent=money(l*(s-c))+" บาท";
+ $("literTotal").textContent=money(l);
+}
+["liters","sellPrice","costPrice"].forEach(x=>$(x).addEventListener("input",calculate));
+$("calc").onclick=calculate;
+
+$("clear").onclick=()=>{
+ ["liters","sellPrice","costPrice","note"].forEach(x=>$(x).value="");
+ calculate();
+};
+
+$("save").onclick=async()=>{
+ const l=Number($("liters").value)||0,s=Number($("sellPrice").value)||0,c=Number($("costPrice").value)||0;
+ if(l<=0)return msg("กรุณากรอกจำนวนลิตร",true);
+ if(s<=0)return msg("กรุณากรอกราคาขาย",true);
+ const sales=l*s,cost=l*c;
+ const {error}=await supabase.from("fuel_records").insert({
+  date:$("date").value,fuel_type:$("fuelType").value,liters:l,sell_price:s,cost_price:c,
+  sales_total:sales,cost_total:cost,profit:sales-cost,note:$("note").value||null
+ });
+ if(error)return msg("บันทึกไม่สำเร็จ: "+error.message,true);
+ msg("บันทึกเรียบร้อยแล้ว"); $("clear").click(); load();
+};
+
+async function load(){
+ $("history").innerHTML='<tr><td colspan="8">กำลังโหลด...</td></tr>';
+ const {data,error}=await supabase.from("fuel_records").select("*").order("date",{ascending:false}).order("created_at",{ascending:false});
+ if(error){$("history").innerHTML='<tr><td colspan="8">โหลดข้อมูลไม่สำเร็จ</td></tr>';return msg("เชื่อมต่อ Supabase ไม่สำเร็จ: "+error.message,true)}
+ records=data||[]; render();
+}
+function render(){
+ if(!records.length){$("history").innerHTML='<tr><td colspan="8">ยังไม่มีรายการ</td></tr>'}
+ else $("history").innerHTML=records.map(r=>`<tr><td>${r.date||""}</td><td>${esc(r.fuel_type)}</td><td>${money(r.liters)}</td><td>${money(r.sell_price)}</td><td>${money(r.sales_total)}</td><td>${money(r.cost_total)}</td><td>${money(r.profit)}</td><td><button class="red" data-id="${r.id}">🗑️</button></td></tr>`).join("");
+ document.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>del(b.dataset.id));
+ let s=0,c=0,p=0,l=0;records.forEach(r=>{s+=+r.sales_total||0;c+=+r.cost_total||0;p+=+r.profit||0;l+=+r.liters||0});
+ $("allSales").textContent=money(s)+" บาท";$("allCosts").textContent=money(c)+" บาท";$("allProfit").textContent=money(p)+" บาท";$("allLiters").textContent=money(l)+" ลิตร";
+}
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+async function del(id){
+ if(!confirm("ต้องการลบรายการนี้หรือไม่?"))return;
+ const {error}=await supabase.from("fuel_records").delete().eq("id",id);
+ if(error)return msg("ลบไม่สำเร็จ: "+error.message,true);
+ msg("ลบรายการแล้ว");load();
+}
+$("refresh").onclick=load;
+
+$("csv").onclick=()=>{
+ if(!records.length)return msg("ยังไม่มีข้อมูลสำหรับดาวน์โหลด",true);
+ const head=["วันที่","ชนิดน้ำมัน","ลิตร","ราคาขาย/ลิตร","ต้นทุน/ลิตร","ยอดขาย","ต้นทุน","กำไร","หมายเหตุ"];
+ const rows=records.map(r=>[r.date,r.fuel_type,r.liters,r.sell_price,r.cost_price,r.sales_total,r.cost_total,r.profit,r.note||""]);
+ const csv=[head,...rows].map(row=>row.map(v=>`"${String(v??"").replaceAll('"','""')}"`).join(",")).join("\n");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"}));a.download="fuel-records-"+new Date().toISOString().slice(0,10)+".csv";a.click();
+};
+load();
+</script>
+</body>
+</html>
