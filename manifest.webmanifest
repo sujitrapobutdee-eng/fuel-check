@@ -1,0 +1,12 @@
+{
+  "name": "ระบบตรวจสอบยอดน้ำมัน",
+  "short_name": "ตรวจน้ำมัน",
+  "description": "ระบบตรวจสอบยอดน้ำมันจากตู้ 2 ช่อง เทียบกับน้ำมันในถัง พร้อมยอดขาย ต้นทุน และกำไร",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#2563eb",
+  "lang": "th",
+  "icons": []
+}
