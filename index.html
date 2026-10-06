@@ -26,7 +26,7 @@ input,select{width:100%;padding:11px;border:1px solid #d1d5db;border-radius:10px
 button{border:0;border-radius:10px;padding:11px 15px;font-size:15px;font-weight:700;cursor:pointer}
 .primary{background:#2563eb;color:#fff}.green{background:#16a34a;color:#fff}.red{background:#dc2626;color:#fff}.gray{background:#6b7280;color:#fff}
 .status{display:none;padding:11px;border-radius:10px;margin-bottom:14px}.status.ok{display:block;background:#dcfce7;color:#166534}.status.err{display:block;background:#fee2e2;color:#991b1b}
-.table{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1050px}
+.table{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1120px}
 th,td{padding:9px;border-bottom:1px solid #e5e7eb;text-align:center;font-size:14px}th{background:#f9fafb}
 .note{font-size:13px;color:#64748b;margin-top:8px;line-height:1.5}
 @media(max-width:700px){
@@ -175,6 +175,12 @@ $("date").value=new Date().toLocaleDateString("en-CA");
 function num(id){return Number($(id).value)||0}
 function fmt(n){return Number(n||0).toFixed(3)}
 function money(n){return Number(n||0).toFixed(2)}
+function diffText(n){
+  n=Number(n||0);
+  if(Math.abs(n)<0.0005) return "เท่ากัน 0.000 ลิตร";
+  if(n<0) return "ตู้ขายเกินถัง "+fmt(Math.abs(n))+" ลิตร";
+  return "ถังเหลือ/ใช้มากกว่าตู้ "+fmt(n)+" ลิตร";
+}
 function msg(t,err=false){$("status").textContent=t;$("status").className="status "+(err?"err":"ok");setTimeout(()=>$("status").className="status",3500)}
 
 function calculate(){
@@ -190,7 +196,7 @@ function calculate(){
   $("s2").textContent=fmt(p2)+" ลิตร";
   $("pumpTotal").textContent=fmt(pump)+" ลิตร";
   $("tankUsed").textContent=fmt(tank)+" ลิตร";
-  $("difference").textContent=fmt(diff)+" ลิตร";
+  $("difference").textContent=diffText(diff);
   $("saleTotal").textContent=money(pump*sell)+" บาท";
   $("costTotal").textContent=money(pump*cost)+" บาท";
   $("profitTotal").textContent=money(pump*(sell-cost))+" บาท";
@@ -269,7 +275,7 @@ function render(){
         <td>${fmt(p2)}</td>
         <td>${fmt(r.liters)}</td>
         <td>${fmt(tank)}</td>
-        <td>${fmt(diff)}</td>
+        <td>${diffText(diff)}</td>
         <td>${money(r.sales_total)}</td>
         <td>${money(r.profit)}</td>
         <td><button class="red" data-id="${r.id}">🗑️</button></td>
