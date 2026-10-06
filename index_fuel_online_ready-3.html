@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตรวจสอบยอดน้ำมัน</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f4f6f8;margin:0;padding:14px;color:#222}
+.card{max-width:700px;margin:auto;background:#fff;padding:18px;border-radius:16px;box-shadow:0 3px 14px #0002}
+h1{text-align:center;font-size:23px;margin:5px 0 8px}
+h2{font-size:18px;margin:10px 0}
+.section{border:1px solid #ddd;border-radius:12px;padding:14px;margin:12px 0}
+label{display:block;font-weight:bold;margin:8px 0 4px}
+input{width:100%;box-sizing:border-box;padding:11px;border:1px solid #bbb;border-radius:8px;font-size:16px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{width:100%;padding:12px;border:0;border-radius:9px;background:#1677ff;color:white;font-size:16px;font-weight:bold;margin-top:9px}
+button.secondary{background:#555}.danger{background:#d33!important}
+.result{background:#eef7ee;border-radius:10px;padding:12px;margin-top:12px;line-height:1.8}
+.small{color:#666;font-size:13px}
+.history{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border-bottom:1px solid #ddd;padding:8px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.del{background:#d33;padding:6px 8px;font-size:12px;width:auto;margin:0}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>⛽ ตรวจสอบยอดน้ำมัน</h1>
+<p class="small">☁️ บันทึกออนไลน์ ทุกเครื่องที่เปิดลิงก์เดียวกันเห็นข้อมูลเดียวกัน</p>
+
+<div class="section">
+<label>วันที่</label>
+<input id="date" type="date">
+</div>
+
+<div class="section">
+<h2>ตู้จ่ายน้ำมัน</h2>
+<div class="row">
+<div><label>ช่อง 1 — รอบแรก</label><input id="m1a" type="number" step="0.001"></div>
+<div><label>ช่อง 1 — รอบสอง</label><input id="m1b" type="number" step="0.001"></div>
+</div>
+<div class="row">
+<div><label>ช่อง 2 — รอบแรก</label><input id="m2a" type="number" step="0.001"></div>
+<div><label>ช่อง 2 — รอบสอง</label><input id="m2b" type="number" step="0.001"></div>
+</div>
+</div>
+
+<div class="section">
+<h2>น้ำมันในถัง</h2>
+<div class="row">
+<div><label>ถัง — รอบแรก (ลิตร)</label><input id="t1" type="number" step="0.001"></div>
+<div><label>ถัง — รอบสอง (ลิตร)</label><input id="t2" type="number" step="0.001"></div>
+</div>
+</div>
+
+<div class="section">
+<h2>💰 ราคาน้ำมัน</h2>
+<div class="row">
+<div><label>ราคาทุนต่อลิตร (บาท)</label><input id="cost" type="number" step="0.001" placeholder="เช่น 30.00"></div>
+<div><label>ราคาขายต่อลิตร (บาท)</label><input id="price" type="number" step="0.001" placeholder="เช่น 35.00"></div>
+</div>
+</div>
+
+<button onclick="calculate()">คำนวณ</button>
+<div id="out"></div>
+<button onclick="saveRecord()">💾 บันทึกยอดวันนี้</button>
+
+<div class="section">
+<h2>📋 ประวัติยอดแต่ละวัน</h2>
+<div id="history"></div>
+<button class="secondary" onclick="exportCSV()">📥 ดาวน์โหลดประวัติเป็น CSV</button>
+<button class="danger" onclick="clearAll()">ลบประวัติทั้งหมด</button>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ===== ตั้งค่าการเชื่อมต่อ Supabase =====
+// ใส่ URL และ anon key ของโปรเจกต์ Supabase ของคุณตรงนี้
+const SUPABASE_URL = "https://zxotbgxaqqzyggnlddok.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_lITFb77PJzK71n2-UYHfTA_KiNrtADu";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const ids=['date','m1a','m1b','m2a','m2b','t1','t2'];
+function today(){
+ let d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+ return d.toISOString().slice(0,10);
+}
+document.getElementById('date').value=today();
+
+function n(id){return parseFloat(document.getElementById(id).value)||0}
+function fmt(x){return x.toLocaleString('th-TH',{minimumFractionDigits:3,maximumFractionDigits:3})}
+
+function getCalc(){
+ const m1a=n('m1a'),m1b=n('m1b'),m2a=n('m2a'),m2b=n('m2b'),t1=n('t1'),t2=n('t2');
+ const cost=n('cost'), price=n('price');
+ const s1=m1b-m1a, s2=m2b-m2a, total=s1+s2, tank=t1-t2, diff=total-tank;
+ const revenue=total*price, costTotal=total*cost, profit=revenue-costTotal;
+ return {date:document.getElementById('date').value,m1a,m1b,m2a,m2b,t1,t2,cost,price,s1,s2,total,tank,diff,revenue,costTotal,profit};
+}
+function calculate(){
+ const r=getCalc();
+ document.getElementById('out').innerHTML=`
+ <div class="result">
+ <b>ผลการคำนวณน้ำมัน</b><br>
+ ช่อง 1 ขายได้ = ${fmt(r.s1)} ลิตร<br>
+ ช่อง 2 ขายได้ = ${fmt(r.s2)} ลิตร<br>
+ <b>รวมตู้ขายได้ = ${fmt(r.total)} ลิตร</b><br><br>
+ น้ำมันจากถัง = ${fmt(r.tank)} ลิตร<br>
+ <b>ส่วนต่าง ตู้ - ถัง = ${fmt(r.diff)} ลิตร</b>
+ </div>
+ <div class="result">
+ <b>💰 ยอดขายและกำไร</b><br>
+ ราคาทุน = ${fmt(r.cost)} บาท/ลิตร<br>
+ ราคาขาย = ${fmt(r.price)} บาท/ลิตร<br>
+ ยอดขายรวม = <b>${fmt(r.revenue)} บาท</b><br>
+ ต้นทุนรวม = <b>${fmt(r.costTotal)} บาท</b><br>
+ กำไร = <b>${fmt(r.profit)} บาท</b><br>
+ กำไรต่อลิตร = ${fmt(r.price-r.cost)} บาท
+ </div>`;
+}
+async function saveRecord(){
+  const r=getCalc();
+  if(!r.date){alert('กรุณาเลือกวันที่');return}
+
+  if(SUPABASE_URL.includes('ใส่_') || SUPABASE_ANON_KEY.includes('ใส่_')){
+    alert('กรุณาใส่ SUPABASE URL และ anon key ก่อนใช้งาน');
+    return;
+  }
+
+  const row = {
+    date:r.date,
+    m1a:r.m1a, m1b:r.m1b,
+    m2a:r.m2a, m2b:r.m2b,
+    t1:r.t1, t2:r.t2,
+    cost:r.cost, price:r.price,
+    s1:r.s1, s2:r.s2, total:r.total,
+    tank:r.tank, diff:r.diff,
+    revenue:r.revenue, costtotal:r.costTotal, profit:r.profit
+  };
+
+  const {error} = await supabaseClient
+    .from('fuel_records')
+    .upsert(row, {onConflict:'date'});
+
+  if(error){
+    console.error(error);
+    alert('บันทึกไม่สำเร็จ: ' + error.message);
+    return;
+  }
+
+  await renderHistory();
+  alert('บันทึกยอดวันที่ '+r.date+' แล้ว ทุกเครื่องที่เปิดลิงก์นี้จะเห็นข้อมูลเดียวกัน');
+}
+
+async function renderHistory(){
+  const {data,error} = await supabaseClient
+    .from('fuel_records')
+    .select('*')
+    .order('date',{ascending:false});
+
+  if(error){
+    console.error(error);
+    document.getElementById('history').innerHTML =
+      '<p class="small">โหลดข้อมูลไม่สำเร็จ: '+error.message+'</p>';
+    return;
+  }
+
+  if(!data.length){
+    document.getElementById('history').innerHTML='<p class="small">ยังไม่มีประวัติ</p>';
+    return;
+  }
+
+  let h='<table><tr><th>วันที่</th><th>ตู้รวม (ล.)</th><th>ถัง (ล.)</th><th>ส่วนต่าง</th><th>ยอดขาย</th><th>ต้นทุน</th><th>กำไร</th><th></th></tr>';
+  data.forEach((r,i)=>{
+    h+=`<tr>
+      <td>${r.date}</td>
+      <td>${fmt(Number(r.total)||0)}</td>
+      <td>${fmt(Number(r.tank)||0)}</td>
+      <td>${fmt(Number(r.diff)||0)}</td>
+      <td>${fmt(Number(r.revenue)||0)}</td>
+      <td>${fmt(Number(r.costtotal ?? r.cost_total)||0)}</td>
+      <td>${fmt(Number(r.profit)||0)}</td>
+      <td><button class="del" onclick="delRecord('${r.date}')">ลบ</button></td>
+    </tr>`;
+  });
+  h+='</table>';
+  document.getElementById('history').innerHTML=h;
+}
+
+async function delRecord(date){
+  if(!confirm('ลบรายการวันที่ '+date+' หรือไม่?')) return;
+
+  const {error}=await supabaseClient
+    .from('fuel_records')
+    .delete()
+    .eq('date',date);
+
+  if(error){
+    alert('ลบไม่สำเร็จ: '+error.message);
+    return;
+  }
+  renderHistory();
+}
+
+async function clearAll(){
+  if(!confirm('ต้องการลบประวัติทั้งหมดใช่ไหม?')) return;
+
+  const {error}=await supabaseClient
+    .from('fuel_records')
+    .delete()
+    .not('date','is',null);
+
+  if(error){
+    alert('ลบไม่สำเร็จ: '+error.message);
+    return;
+  }
+  renderHistory();
+}
+
+async function exportCSV(){
+  const {data,error}=await supabaseClient
+    .from('fuel_records')
+    .select('*')
+    .order('date',{ascending:false});
+
+  if(error){
+    alert('ดาวน์โหลดข้อมูลไม่สำเร็จ: '+error.message);
+    return;
+  }
+  if(!data.length){
+    alert('ยังไม่มีข้อมูลให้ดาวน์โหลด');
+    return;
+  }
+
+  let csv='วันที่,ตู้รวม(ลิตร),ถังจ่ายออก(ลิตร),ส่วนต่าง(ลิตร),ราคาทุน/ลิตร,ราคาขาย/ลิตร,ยอดขาย(บาท),ต้นทุน(บาท),กำไร(บาท)\n';
+  data.forEach(r=>csv+=`${r.date},${r.total},${r.tank},${r.diff},${r.cost},${r.price},${r.revenue},${r.costtotal ?? r.cost_total},${r.profit}\n`);
+
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='ประวัติยอดน้ำมัน_ยอดขาย_กำไร.csv';
+  a.click();
+}
+
+renderHistory();
+ alert('บันทึกยอดวันที่ '+r.date+' แล้ว');
+}
+function renderHistory(){
+ const data=JSON.parse(localStorage.getItem('fuelRecords')||'[]');
+ if(!data.length){document.getElementById('history').innerHTML='<p class="small">ยังไม่มีประวัติ</p>';return}
+ let h='<table><tr><th>วันที่</th><th>ตู้รวม (ล.)</th><th>ถัง (ล.)</th><th>ส่วนต่าง</th><th>ยอดขาย</th><th>ต้นทุน</th><th>กำไร</th><th></th></tr>';
+ data.forEach((r,i)=>h+=`<tr><td>${r.date}</td><td>${fmt(r.total)}</td><td>${fmt(r.tank)}</td><td>${fmt(r.diff)}</td><td>${fmt(r.revenue)}</td><td>${fmt(r.costTotal)}</td><td>${fmt(r.profit)}</td><td><button class="del" onclick="delRecord(${i})">ลบ</button></td></tr>`);
+ h+='</table>'; document.getElementById('history').innerHTML=h;
+}
+function delRecord(i){
+ let data=JSON.parse(localStorage.getItem('fuelRecords')||'[]');
+ if(confirm('ลบรายการนี้หรือไม่?')){data.splice(i,1);localStorage.setItem('fuelRecords',JSON.stringify(data));renderHistory();}
+}
+function clearAll(){
+ if(confirm('ต้องการลบประวัติทั้งหมดใช่ไหม?')){localStorage.removeItem('fuelRecords');renderHistory();}
+}
+function exportCSV(){
+ const data=JSON.parse(localStorage.getItem('fuelRecords')||'[]');
+ if(!data.length){alert('ยังไม่มีข้อมูลให้ดาวน์โหลด');return}
+ let csv='วันที่,ตู้รวม(ลิตร),ถังจ่ายออก(ลิตร),ส่วนต่าง(ลิตร),ราคาทุน/ลิตร,ราคาขาย/ลิตร,ยอดขาย(บาท),ต้นทุน(บาท),กำไร(บาท)\\n';
+ data.forEach(r=>csv+=`${r.date},${r.total},${r.tank},${r.diff},${r.cost},${r.price},${r.revenue},${r.costTotal},${r.profit}\\n`);
+ const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ประวัติยอดน้ำมัน_ยอดขาย_กำไร.csv';a.click();
+}
+renderHistory();
+</script>
+</body>
+</html>
